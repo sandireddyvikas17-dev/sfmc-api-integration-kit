@@ -1,0 +1,19 @@
+# Filled-in Postman environments contain real credentials — never commit them.
+# Only the TEMPLATE environment in postman/ belongs in this repo.
+*postman_environment.local.json
+*.local.postman_environment.json
+postman/*filled*.json
+
+# Secrets / local config
+.env
+*.env
+!.env.example
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Held LinkedIn draft — published from the local copy on Day 2, not part of the repo
+POST_DAY1_DRAFT.md

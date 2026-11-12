@@ -1,0 +1,367 @@
+{
+  "info": {
+    "_postman_id": "00000000-0000-4000-8000-000000000002",
+    "name": "QuickStay Hotels \u2014 SFMC Transactional & Journey API Kit (Day 1)",
+    "description": "Personal portfolio build for the fictional QuickStay Hotels brand. Placeholders only \u2014 no real credentials. Start with Auth > Get Access Token, create the two send definitions once per MID, then send. See postman/README.md in the repo.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Get Access Token (server-to-server)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"grant_type\": \"client_credentials\",\n  \"client_id\": \"{{client_id}}\",\n  \"client_secret\": \"{{client_secret}}\",\n  \"account_id\": \"{{account_id}}\",\n  \"scope\": \"{{scope}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "https://{{auth_base_url}}/v2/token",
+              "protocol": "https",
+              "host": [
+                "{{auth_base_url}}"
+              ],
+              "path": [
+                "v2",
+                "token"
+              ]
+            }
+          },
+          "description": "POST /v2/token with grant_type=client_credentials. The test script saves access_token to the active environment. Re-run only near expiry or after a 401 \u2014 see docs/oauth2-server-to-server-flow.md.",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (pm.response.code === 200 && json.access_token) {",
+                  "  pm.environment.set('access_token', json.access_token);",
+                  "  console.log('access_token saved. Expires in (s): ' + json.expires_in);",
+                  "}",
+                  "pm.test('Token returned', function () { pm.expect(json.access_token).to.be.a('string').and.not.empty; });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Definitions",
+      "item": [
+        {
+          "name": "Create Booking Confirmation Definition",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"classification\": \"{{send_classification_key}}\",\n  \"content\": {\n    \"customerKey\": \"{{booking_confirmation_email_customer_key}}\"\n  },\n  \"definitionKey\": \"quickstay-booking-confirmation\",\n  \"deliveryProfile\": {\n    \"domainId\": \"{{delivery_profile_domain_id}}\"\n  },\n  \"description\": \"Transactional confirmation sent by the QuickStay booking system the moment a reservation is created. Fictional demo brand; personal portfolio build.\",\n  \"name\": \"QuickStay \\u2014 Booking Confirmation\",\n  \"options\": {\n    \"createJourney\": false\n  },\n  \"status\": \"Active\",\n  \"subscriptions\": {\n    \"autoAddSubscriber\": true,\n    \"list\": \"{{transactional_list_id}}\",\n    \"updateSubscriber\": true\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "https://{{rest_base_url}}/messaging/v1/email/definitions",
+              "protocol": "https",
+              "host": [
+                "{{rest_base_url}}"
+              ],
+              "path": [
+                "messaging",
+                "v1",
+                "email",
+                "definitions"
+              ]
+            }
+          },
+          "description": "Create once per MID. Body mirrors transactional/send-definitions/booking-confirmation.json \u2014 replace placeholder asset/list keys with the target MID values first."
+        },
+        {
+          "name": "Create Booking Cancellation Definition",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"classification\": \"{{send_classification_key}}\",\n  \"content\": {\n    \"customerKey\": \"{{booking_cancellation_email_customer_key}}\"\n  },\n  \"definitionKey\": \"quickstay-booking-cancellation\",\n  \"deliveryProfile\": {\n    \"domainId\": \"{{delivery_profile_domain_id}}\"\n  },\n  \"description\": \"Transactional cancellation confirmation sent by the QuickStay booking system the moment a reservation is cancelled. Sending this also signals that pre-arrival messaging for the reservation must stop (Journey exit handling lands Day 2). Fictional demo brand; personal portfolio build.\",\n  \"name\": \"QuickStay \\u2014 Booking Cancellation\",\n  \"options\": {\n    \"createJourney\": false\n  },\n  \"status\": \"Active\",\n  \"subscriptions\": {\n    \"autoAddSubscriber\": true,\n    \"list\": \"{{transactional_list_id}}\",\n    \"updateSubscriber\": true\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "https://{{rest_base_url}}/messaging/v1/email/definitions",
+              "protocol": "https",
+              "host": [
+                "{{rest_base_url}}"
+              ],
+              "path": [
+                "messaging",
+                "v1",
+                "email",
+                "definitions"
+              ]
+            }
+          },
+          "description": "Create once per MID. Body mirrors transactional/send-definitions/booking-cancellation.json."
+        },
+        {
+          "name": "Get Definition \u2014 Booking Confirmation",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "https://{{rest_base_url}}/messaging/v1/email/definitions/quickstay-booking-confirmation",
+              "protocol": "https",
+              "host": [
+                "{{rest_base_url}}"
+              ],
+              "path": [
+                "messaging",
+                "v1",
+                "email",
+                "definitions",
+                "quickstay-booking-confirmation"
+              ]
+            }
+          },
+          "description": "Verify the definition exists, is Active, and points at the expected email asset before sending traffic."
+        },
+        {
+          "name": "Get Definition \u2014 Booking Cancellation",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "https://{{rest_base_url}}/messaging/v1/email/definitions/quickstay-booking-cancellation",
+              "protocol": "https",
+              "host": [
+                "{{rest_base_url}}"
+              ],
+              "path": [
+                "messaging",
+                "v1",
+                "email",
+                "definitions",
+                "quickstay-booking-cancellation"
+              ]
+            }
+          },
+          "description": "Verify the cancellation definition before sending traffic."
+        }
+      ]
+    },
+    {
+      "name": "Sends",
+      "item": [
+        {
+          "name": "Send Booking Confirmation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"definitionKey\": \"quickstay-booking-confirmation\",\n  \"recipient\": {\n    \"attributes\": {\n      \"CancellationPolicySummary\": \"Free cancellation until 24 hours before check-in.\",\n      \"CheckInDate\": \"2026-12-04\",\n      \"CheckOutDate\": \"2026-12-06\",\n      \"GuestFirstName\": \"Amaya\",\n      \"NumberOfGuests\": 2,\n      \"PropertyName\": \"QuickStay Downtown San Jose\",\n      \"ReservationId\": \"QS-84213\",\n      \"RoomType\": \"King Room\"\n    },\n    \"contactKey\": \"guest-amaya-nair@example.com\",\n    \"email\": \"amaya.nair@example.com\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "https://{{rest_base_url}}/messaging/v1/email/messages/{{messageKey}}",
+              "protocol": "https",
+              "host": [
+                "{{rest_base_url}}"
+              ],
+              "path": [
+                "messaging",
+                "v1",
+                "email",
+                "messages",
+                "{{messageKey}}"
+              ]
+            }
+          },
+          "description": "One call per reservation-created event. Set environment variable messageKey first (convention: QS-<ReservationId>-CONF-<seq>). Expect 202 + requestId; 202 proves acceptance, not delivery."
+        },
+        {
+          "name": "Send Booking Cancellation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"definitionKey\": \"quickstay-booking-cancellation\",\n  \"recipient\": {\n    \"attributes\": {\n      \"CancellationReference\": \"CANC-55190\",\n      \"CancelledAt\": \"2026-11-20T15:42:00Z\",\n      \"CheckInDate\": \"2026-12-04\",\n      \"CheckOutDate\": \"2026-12-06\",\n      \"GuestFirstName\": \"Amaya\",\n      \"PropertyName\": \"QuickStay Downtown San Jose\",\n      \"ReservationId\": \"QS-84213\",\n      \"RoomType\": \"King Room\"\n    },\n    \"contactKey\": \"guest-amaya-nair@example.com\",\n    \"email\": \"amaya.nair@example.com\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "https://{{rest_base_url}}/messaging/v1/email/messages/{{messageKey}}",
+              "protocol": "https",
+              "host": [
+                "{{rest_base_url}}"
+              ],
+              "path": [
+                "messaging",
+                "v1",
+                "email",
+                "messages",
+                "{{messageKey}}"
+              ]
+            }
+          },
+          "description": "One call per reservation-cancelled event. Set messageKey to the cancellation key (QS-<ReservationId>-CANC-<seq>) before sending. Expect 202 + requestId."
+        },
+        {
+          "name": "Get Send Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "https://{{rest_base_url}}/messaging/v1/email/messages/{{messageKey}}",
+              "protocol": "https",
+              "host": [
+                "{{rest_base_url}}"
+              ],
+              "path": [
+                "messaging",
+                "v1",
+                "email",
+                "messages",
+                "{{messageKey}}"
+              ]
+            }
+          },
+          "description": "Check the status of one send by its messageKey. Use the same messageKey that was sent."
+        }
+      ]
+    }
+  ]
+}

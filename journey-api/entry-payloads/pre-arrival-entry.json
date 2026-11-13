@@ -1,0 +1,28 @@
+{
+  "_comment": "Example entry event — pre-arrival. Call: POST https://{{rest_base_url}}/interaction/v1/events with a Bearer token (see docs/oauth2-server-to-server-flow.md). Same fictional reservation as Day 1's booking-confirmation send example (QS-84213), so the two payloads can be compared field-for-field.",
+  "_expectedResponse": {
+    "_note": "201 means the contact was injected into QuickStay_PreArrival_v1. It does not mean any email has been sent — the Journey's CheckInDate-anchored wait runs first. Keep the eventInstanceId with the reservation record.",
+    "body": {
+      "contactKey": "guest-amaya-nair@example.com",
+      "eventDefinitionKey": "QS_PreArrival_Event",
+      "eventInstanceId": "<returned by SFMC — capture it for logging and debugging>"
+    },
+    "httpStatus": 201
+  },
+  "ContactKey": "guest-amaya-nair@example.com",
+  "Data": {
+    "CheckInDate": "2026-12-04",
+    "CheckOutDate": "2026-12-06",
+    "ContactKey": "guest-amaya-nair@example.com",
+    "EmailAddress": "amaya.nair@example.com",
+    "EventFiredAt": "2026-11-20T15:30:00Z",
+    "EventVersion": 1,
+    "GuestFirstName": "Amaya",
+    "NumberOfGuests": 2,
+    "PropertyName": "QuickStay Downtown San Jose",
+    "ReservationId": "QS-84213",
+    "ReservationStatus": "Confirmed",
+    "RoomType": "King Room"
+  },
+  "EventDefinitionKey": "QS_PreArrival_Event"
+}

@@ -47,12 +47,12 @@ That means the booking system is the trigger, not a schedule. Every message in t
 | Day | Focus | Artefacts |
 |---|---|---|
 | **Day 1 — API foundations** | OAuth, Postman setup, Transactional send definitions | This README, `docs/oauth2-server-to-server-flow.md`, `postman/`, `transactional/` |
-| **Day 2 — Real-time journeys** *(planned)* | API event schema + entry payloads, Journey design, SSJS order-lookup / re-send CloudPage | `journey-api/`, `cloudpages/` |
+| **Day 2 — Real-time journeys** | API event schema + entry payloads, Journey design, SSJS order-lookup / re-send CloudPage | `journey-api/`, `cloudpages/` |
 | **Day 3 — Reliability** *(planned)* | Logging DE + SSJS error handling, ENS callback spec, retry / idempotency notes, transactional deliverability checklist | `reliability/` |
 
-Day 1 is built. Days 2–3 are the plan above, not finished work — this README will be updated as each day lands.
+Days 1–2 are built. Day 3 is the plan above, not finished work — this README will be updated as it lands.
 
-## Repo layout (Day 1)
+## Repo layout (Day 2)
 
 | Folder / file | Contents |
 |---|---|
@@ -62,6 +62,12 @@ Day 1 is built. Days 2–3 are the plan above, not finished work — this README
 | `transactional/README.md` | How the Transactional Messaging pieces fit together: definitions first, then sends |
 | `transactional/send-definitions/` | Send-definition payloads: booking confirmation, booking cancellation |
 | `transactional/send-examples/` | Example send requests (one per definition) with fictional reservation data, plus the responses to check for |
+| `journey-api/README.md` | How API-event entry works and why it replaces schedule/batch entry for stay-anchored messages |
+| `journey-api/api-event-definition.json` | Both API event definitions (`QS_PreArrival_Event`, `QS_PostStay_Event`) as create payloads, plus the `QS_Journey_Entry` Data Extension schema both events write to |
+| `journey-api/entry-payloads/` | One complete fictional entry payload per event, for the same reservation Day 1 confirmed (`QS-84213`), plus the cancellation signal payload |
+| `journey-api/journey-design.md` | The two Journeys: entry/re-entry rules, waits anchored to `CheckInDate` / check-out, Journey Data vs Contact Data decision splits, and how a cancellation exits a contact before the send |
+| `cloudpages/README.md` | The booking-lookup page's flow, its lookup-security and throttling decisions, and the Data Extensions it expects |
+| `cloudpages/order-lookup.ssjs` | The CloudPage itself: AMPscript validates a booking reference + email and renders the stay; SSJS re-sends the confirmation through Day 1's transactional definition, throttled via a log DE |
 
 ## How a send works, in one pass
 
@@ -80,6 +86,6 @@ Day 1 is built. Days 2–3 are the plan above, not finished work — this README
 
 ## Status
 
-**Day 1 of 3 built** — API foundations. See `docs/BUILD_LOG.md` for the per-day record.
+**Day 2 of 3 built** — API foundations (Day 1) and real-time journeys (Day 2). See `docs/BUILD_LOG.md` for the per-day record.
 
 Other portfolio projects: Project #1 (SFMC campaign portfolio) and Project #2 (Data 360 Unified Profile & Activation Lab) live under the same GitHub account.

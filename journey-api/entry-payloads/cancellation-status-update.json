@@ -1,0 +1,23 @@
+{
+  "_comment": "Cancellation pattern — NOT a Journey entry event. When a reservation is cancelled, the booking system (1) sends the Day 1 cancellation transactional email, and (2) fires this small API event into the one-step QuickStay_Cancellation_Signal journey, whose only activity is an Update Contact step writing ReservationStatus = Cancelled onto the guest's QS_Reservation_Status record in Contact Data. QuickStay_PreArrival_v1 checks Contact Data before its send and exits a contact whose reservation is Cancelled — see 'How cancellation stops a journey' in journey-design.md. Same fictional cancelled reservation shape as Day 1's cancellation send example; timestamps match it (cancelled 2026-11-20T15:42:00Z, CancellationReference CANC-55190).",
+  "_expectedResponse": {
+    "_note": "201 means the signal event was accepted. The pre-arrival exit happens when the contact next reaches the pre-send decision split — which is why that split sits immediately before the email activity, not at Journey entry.",
+    "body": {
+      "contactKey": "guest-amaya-nair@example.com",
+      "eventDefinitionKey": "QS_Cancellation_Signal",
+      "eventInstanceId": "<returned by SFMC — capture it for logging and debugging>"
+    },
+    "httpStatus": 201
+  },
+  "ContactKey": "guest-amaya-nair@example.com",
+  "Data": {
+    "CancellationReference": "CANC-55190",
+    "ContactKey": "guest-amaya-nair@example.com",
+    "EmailAddress": "amaya.nair@example.com",
+    "EventFiredAt": "2026-11-20T15:42:00Z",
+    "EventVersion": 2,
+    "ReservationId": "QS-84213",
+    "ReservationStatus": "Cancelled"
+  },
+  "EventDefinitionKey": "QS_Cancellation_Signal"
+}

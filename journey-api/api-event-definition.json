@@ -1,0 +1,122 @@
+{
+  "_comment": "API event definitions — QuickStay Hotels (Day 2). Create once per MID with POST /interaction/v1/eventDefinitions, then activate each Journey that consumes the event before firing production events at it. Replace every {{placeholder}} with the target MID's real values at setup time. No real credentials or Data Extension IDs belong in this file. Personal portfolio build; fictional brand.",
+  "entryDataExtensionSchema": {
+    "_comment": "QS_Journey_Entry — the Data Extension both API events write to. In Journey Builder this schema is created/selected when the API entry source is configured on the Journey; the event's Data block may only carry fields defined here. Sendable on ContactKey. ReservationId + EventVersion are the deduplication pair described in journey-design.md.",
+    "fields": [
+      {
+        "isNullable": false,
+        "isPrimaryKey": true,
+        "length": 254,
+        "name": "ContactKey",
+        "note": "Guest identifier — matches the contactKey used in Day 1's transactional sends for the same guest.",
+        "type": "Text"
+      },
+      {
+        "isNullable": false,
+        "isPrimaryKey": false,
+        "length": 254,
+        "name": "EmailAddress",
+        "type": "EmailAddress"
+      },
+      {
+        "isNullable": false,
+        "isPrimaryKey": true,
+        "length": 50,
+        "name": "ReservationId",
+        "note": "Part of the primary key with ContactKey + EventVersion, so an updated reservation can re-enter as a new version instead of colliding with the original row.",
+        "type": "Text"
+      },
+      {
+        "isNullable": false,
+        "isPrimaryKey": true,
+        "name": "EventVersion",
+        "note": "Booking-system version of the reservation: 1 at creation, +1 per material change (dates, property, room).",
+        "type": "Number"
+      },
+      {
+        "isNullable": false,
+        "isPrimaryKey": false,
+        "length": 50,
+        "name": "ReservationStatus",
+        "note": "Confirmed | Modified | CheckedIn | CheckedOut | Cancelled — the field the cancellation exit pattern and the decision splits read.",
+        "type": "Text"
+      },
+      {
+        "isNullable": false,
+        "isPrimaryKey": false,
+        "length": 100,
+        "name": "GuestFirstName",
+        "type": "Text"
+      },
+      {
+        "isNullable": false,
+        "isPrimaryKey": false,
+        "length": 200,
+        "name": "PropertyName",
+        "type": "Text"
+      },
+      {
+        "isNullable": false,
+        "isPrimaryKey": false,
+        "name": "CheckInDate",
+        "note": "Anchor for the pre-arrival wait (CheckInDate minus 3 days).",
+        "type": "Date"
+      },
+      {
+        "isNullable": false,
+        "isPrimaryKey": false,
+        "name": "CheckOutDate",
+        "note": "Anchor for post-stay eligibility — the post-stay event only fires at/after this date.",
+        "type": "Date"
+      },
+      {
+        "isNullable": true,
+        "isPrimaryKey": false,
+        "length": 100,
+        "name": "RoomType",
+        "type": "Text"
+      },
+      {
+        "isNullable": true,
+        "isPrimaryKey": false,
+        "name": "NumberOfGuests",
+        "type": "Number"
+      },
+      {
+        "isNullable": false,
+        "isPrimaryKey": false,
+        "name": "EventFiredAt",
+        "note": "UTC timestamp from the booking system, not the SFMC entry time — the two differ when a fire is retried, and debugging needs the source time.",
+        "type": "Date"
+      }
+    ],
+    "name": "QS_Journey_Entry",
+    "sendable": true,
+    "sendableField": "ContactKey",
+    "subscriberRelationship": "ContactKey relates to Subscribers on Subscriber Key"
+  },
+  "eventDefinitions": [
+    {
+      "automationId": null,
+      "dataExtensionId": "{{pre_arrival_entry_de_id}}",
+      "dataExtensionName": "QS_Journey_Entry",
+      "description": "Fired by the QuickStay booking system the moment a reservation is created or materially changed. Enters the guest into QuickStay_PreArrival_v1, whose waits anchor to CheckInDate. Fictional demo brand; personal portfolio build.",
+      "isVisibleInPicker": true,
+      "key": "QS_PreArrival_Event",
+      "mode": "Production",
+      "name": "QuickStay — Pre-Arrival Entry",
+      "type": "APIEvent"
+    },
+    {
+      "automationId": null,
+      "dataExtensionId": "{{post_stay_entry_de_id}}",
+      "dataExtensionName": "QS_Journey_Entry",
+      "description": "Fired by the QuickStay booking system when a guest checks out (ReservationStatus becomes CheckedOut). Enters the guest into QuickStay_PostStay_v1 for the feedback request. Same entry Data Extension as the pre-arrival event — one reservation field shape across both Journeys.",
+      "isVisibleInPicker": true,
+      "key": "QS_PostStay_Event",
+      "mode": "Production",
+      "name": "QuickStay — Post-Stay Entry",
+      "type": "APIEvent"
+    }
+  ]
+}

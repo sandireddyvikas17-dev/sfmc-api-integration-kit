@@ -1,0 +1,28 @@
+{
+  "_comment": "Example entry event — post-stay. Call: POST https://{{rest_base_url}}/interaction/v1/events with a Bearer token. Fired at check-out for the same fictional reservation (QS-84213) — note EventVersion 2: check-out is a new version of the reservation, and ReservationStatus is now CheckedOut. All guest and reservation data is fictional.",
+  "_expectedResponse": {
+    "_note": "201 means the contact was injected into QuickStay_PostStay_v1. The feedback email is behind a 1-day wait in the Journey — see journey-design.md.",
+    "body": {
+      "contactKey": "guest-amaya-nair@example.com",
+      "eventDefinitionKey": "QS_PostStay_Event",
+      "eventInstanceId": "<returned by SFMC — capture it for logging and debugging>"
+    },
+    "httpStatus": 201
+  },
+  "ContactKey": "guest-amaya-nair@example.com",
+  "Data": {
+    "CheckInDate": "2026-12-04",
+    "CheckOutDate": "2026-12-06",
+    "ContactKey": "guest-amaya-nair@example.com",
+    "EmailAddress": "amaya.nair@example.com",
+    "EventFiredAt": "2026-12-06T11:05:00Z",
+    "EventVersion": 2,
+    "GuestFirstName": "Amaya",
+    "NumberOfGuests": 2,
+    "PropertyName": "QuickStay Downtown San Jose",
+    "ReservationId": "QS-84213",
+    "ReservationStatus": "CheckedOut",
+    "RoomType": "King Room"
+  },
+  "EventDefinitionKey": "QS_PostStay_Event"
+}

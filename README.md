@@ -6,7 +6,7 @@
 
 **Demo brand:** *QuickStay Hotels* — a fictional hotel brand. All guests, reservations, properties, and addresses in this repo are invented for this kit.
 
-**Skills shown (real skills only):** SFMC REST / SOAP concepts, Transactional Messaging API, OAuth 2.0 server-to-server auth, SSJS and AMPscript (Day 2), MC Connect awareness. No certifications are claimed in this repo.
+**Skills shown (real skills only):** SFMC REST / SOAP concepts, Transactional Messaging API, OAuth 2.0 server-to-server auth, SSJS and AMPscript, ENS callbacks, MC Connect awareness. No certifications are claimed in this repo.
 
 ## The scenario
 
@@ -48,11 +48,11 @@ That means the booking system is the trigger, not a schedule. Every message in t
 |---|---|---|
 | **Day 1 — API foundations** | OAuth, Postman setup, Transactional send definitions | This README, `docs/oauth2-server-to-server-flow.md`, `postman/`, `transactional/` |
 | **Day 2 — Real-time journeys** | API event schema + entry payloads, Journey design, SSJS order-lookup / re-send CloudPage | `journey-api/`, `cloudpages/` |
-| **Day 3 — Reliability** *(planned)* | Logging DE + SSJS error handling, ENS callback spec, retry / idempotency notes, transactional deliverability checklist | `reliability/` |
+| **Day 3 — Reliability** | Logging DE + SSJS error handling, ENS callback spec, retry / idempotency notes, transactional deliverability checklist | `reliability/` |
 
-Days 1–2 are built. Day 3 is the plan above, not finished work — this README will be updated as it lands.
+All three days are built. The kit is complete.
 
-## Repo layout (Day 2)
+## Repo layout (complete)
 
 | Folder / file | Contents |
 |---|---|
@@ -68,24 +68,73 @@ Days 1–2 are built. Day 3 is the plan above, not finished work — this README
 | `journey-api/journey-design.md` | The two Journeys: entry/re-entry rules, waits anchored to `CheckInDate` / check-out, Journey Data vs Contact Data decision splits, and how a cancellation exits a contact before the send |
 | `cloudpages/README.md` | The booking-lookup page's flow, its lookup-security and throttling decisions, and the Data Extensions it expects |
 | `cloudpages/order-lookup.ssjs` | The CloudPage itself: AMPscript validates a booking reference + email and renders the stay; SSJS re-sends the confirmation through Day 1's transactional definition, throttled via a log DE |
+| `reliability/README.md` | Day 3 in one pass: accepted ≠ delivered, every attempt logged, failures classified, delivery truth by callback, stream kept separate |
+| `reliability/logging-de-schema.md` | `QS_API_Log` (one row per attempt) + `QS_Send_Status` (one row per messageKey) schemas, retention, and the never-log list (no tokens, no payload dumps) |
+| `reliability/ssjs-error-handling.ssjs` | SSJS patterns: status classification, log-before-you-report, one auth retry, and a worked send wrapper that never surfaces a raw API error |
+| `reliability/ens-callback-spec.md` | ENS callback spec: registration/verification, delivery/bounce/complaint handling, duplicate and out-of-order rules |
+| `reliability/retry-and-idempotency.md` | The timeout case, same-messageKey retries, EventVersion discipline, the retry / never-retry table, backoff and attempt limits |
+| `reliability/deliverability-checklist.md` | Transactional-stream checklist: subdomain/IP/classification separation from promotional, SPF/DKIM/DMARC, content hygiene, per-stream monitoring |
 
 ## How a send works, in one pass
 
 1. The booking system asks SFMC for an access token — see the OAuth doc. The token is cached and reused until it is close to expiry; a fresh token is **not** requested per send.
 2. A send definition already exists in SFMC for each message type (created once, from the payloads in `transactional/send-definitions/`). A definition binds a `definitionKey`, an email asset, and a subscription.
 3. For each reservation change, the booking system posts one send request to that definition, with a unique `messageKey` for the reservation event and the guest + stay fields the email personalises from.
-4. SFMC returns `202` with a `requestId` when the request is accepted. Accepted is not the same as delivered — delivery and bounce outcomes are Day 3's logging / ENS work.
+4. SFMC returns `202` with a `requestId` when the request is accepted. Accepted is not the same as delivered — delivery and bounce outcomes arrive later by ENS callback and are recorded per `reliability/`.
+
+## Sequence diagrams
+
+### Transactional send, with reliability (Days 1 + 3)
+
+```
+Booking system              SFMC                          QuickStay callback
+──────────────              ────                          ──────────────────
+POST /v2/token ───────────► validate package
+◄────────────────────────── 200 access_token (cached, reused)
+POST /messages/{messageKey} ► definition quickstay-booking-confirmation
+                            log attempt → QS_API_Log
+◄────────────────────────── 202 + requestId   (accepted, NOT delivered)
+                            QS_Send_Status = Accepted
+                                 │
+                                 ├─ delivery ──────────► POST ENS callback
+                                 │                       verify → log → 200
+                                 │                       QS_Send_Status = Delivered
+                                 └─ bounce ────────────► POST ENS callback
+                                                         QS_Send_Status = Bounced
+Timeout / 5xx on the send? Retry with the SAME messageKey (max 3 attempts).
+400 / missing definition? Terminal — fix it, never retry it blindly.
+```
+
+### Journey API entry, with cancellation exit (Day 2)
+
+```
+Booking system              SFMC Journey Builder
+──────────────              ────────────────────
+Reservation created/updated
+POST /interaction/v1/events ► QS_PreArrival_Event (EventVersion n)
+◄────────────────────────── 201 + eventInstanceId   (injected, NOT sent)
+                            QuickStay_PreArrival_v1:
+                              Wait by Attribute → CheckInDate − 3 days
+                              Contact Data split: ReservationStatus?
+                                Cancelled → Exit (no send)
+                                Confirmed → pre-arrival email sends
+Guest cancels
+Update Contact payload ────► ReservationStatus = Cancelled
+                            (the pre-send split above is what stops it)
+Check-out
+POST /interaction/v1/events ► QS_PostStay_Event → QuickStay_PostStay_v1
+```
 
 ## Principles used throughout
 
 1. **A definition is created once; a send is per event.** Definitions are configuration. Sends are traffic. Mixing the two is how duplicate definitions and unrepeatable sends happen.
-2. **One `messageKey` per reservation event.** The key is what makes a retry safe to reason about — the same event re-sent carries the same key, a new event gets a new key. See the idempotency notes planned for Day 3.
+2. **One `messageKey` per reservation event.** The key is what makes a retry safe to reason about — the same event re-sent carries the same key, a new event gets a new key. See `reliability/retry-and-idempotency.md`.
 3. **No credentials in the repo, ever.** Client IDs, secrets, MIDs, and subdomain values live in the caller's secret store and in a local, uncommitted Postman environment — never in a collection, payload, or doc. Every value in this repo is a placeholder.
 4. **Fictional data only.** Sample guests use `example.com` addresses and invented reservation references.
 5. **Accepted ≠ delivered.** This kit states plainly which step proves what: the API response proves acceptance, not inbox placement.
 
 ## Status
 
-**Day 2 of 3 built** — API foundations (Day 1) and real-time journeys (Day 2). See `docs/BUILD_LOG.md` for the per-day record.
+**Complete — 3 of 3 days built** — API foundations (Day 1), real-time journeys (Day 2), and reliability (Day 3). See `docs/BUILD_LOG.md` for the per-day record.
 
 Other portfolio projects: Project #1 (SFMC campaign portfolio) and Project #2 (Data 360 Unified Profile & Activation Lab) live under the same GitHub account.

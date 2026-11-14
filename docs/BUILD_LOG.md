@@ -35,3 +35,18 @@ Personal portfolio build for the fictional brand QuickStay Hotels. Not employer 
 **Published today:** the held Day 1 LinkedIn post ("Transactional email is an API product, not a campaign") — held since Nov 12 for the LinkedIn restriction, which lifted today at 6:49 AM PST. The Day 2 post angle ("The fastest journey entry is an event, not a schedule") is deferred to Day 3 (Sat Nov 14) so the series stays in order.
 
 **Next:** Day 3 — reliability: logging DE + SSJS error-handling patterns, Event Notification Service callback spec, retry/idempotency notes, transactional deliverability checklist, README sequence diagrams, and the wrap-up.
+
+## Day 3 — 2026-11-14 — Reliability, and finish
+
+**Built:**
+- `reliability/README.md` — the Day 3 layer in one pass: accepted ≠ delivered, every attempt logged, failures classified, delivery truth by callback, and the stream kept separate
+- `reliability/logging-de-schema.md` — `QS_API_Log` (one row per attempt; primary key `LogId` + `AttemptedAt`; outcome classes, attempt numbers, sanitised error fields, never tokens or payload dumps) and the `QS_Send_Status` roll-up (one row per `MessageKey`, updated by ENS), with retention (90-day log archive) and the rule that neither DE is sendable
+- `reliability/ssjs-error-handling.ssjs` — SSJS pattern library: `classifyHttp` (202/201/200 accepted, 401 auth, 429/5xx/timeout retryable, everything else terminal), log-before-you-report, one-auth-retry-ever, and a worked `sendWithHandling` wrapper that returns plain-language results and never surfaces a raw API error — including why a CloudPage must not sleep-and-retry in a guest's page
+- `reliability/ens-callback-spec.md` — Event Notification Service spec: registration + verification flow, the events this kit consumes (delivery, bounce, complaint) and deliberately does not (transactional open/click), fast-acknowledge handling, duplicate/out-of-order rules (last event wins by event time, severity keeps Complaint > Bounce > Delivered), verify-before-trusting, and unknown-messageKey handling
+- `reliability/retry-and-idempotency.md` — the timeout case in full, the same-`messageKey` retry rule, status-check-before-resend, `EventVersion` discipline for Journey entries, the retry/never-retry table (401 once, 429/5xx backed off, 400/404 never, hard bounce is an address fix not a retry), 3-attempt limit with ~2s/~8s jittered backoff, and the honest note that idempotency here is a discipline, not a claimed platform guarantee
+- `reliability/deliverability-checklist.md` — transactional-stream checklist: dedicated subdomain and IP/delivery profile separate from promotional, separate classification/list/From pattern, SPF/DKIM/DMARC with re-verification after any change, transactional-only content hygiene, hard-bounce address correction at source, and per-stream monitoring where a silent stream is itself an alert
+- `README.md` — final: Day 3 marked built, repo layout completed, two sequence diagrams (transactional send with ENS callback; Journey API entry with cancellation exit), status Complete
+
+**Kit complete:** Day 1 foundations (OAuth, Postman, transactional definitions), Day 2 real-time journeys (API events, Journey design, SSJS order-lookup CloudPage), Day 3 reliability (logging, error handling, ENS, retry/idempotency, deliverability). Fictional brand throughout; no real credentials, no employer work, no metrics claimed.
+
+**Next:** Project #4 — Marketing Cloud Next Migration Playbook (Mon Nov 16 – Wed Nov 18).
